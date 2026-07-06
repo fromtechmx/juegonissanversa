@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Nissan Versa - Carrera 80's | Nissan de los Altos</title>
+<meta name="description" content="Carrera retro estilo 80's: Nissan Versa vs otro modelo Nissan. Promoción de Julio en Nissan de los Altos.">
+<meta name="theme-color" content="#1a0033">
+<style>
+  :root{
+    --neon-pink:#ff2ee6;
+    --neon-cyan:#2ee6ff;
+    --neon-yellow:#ffe62e;
+    --neon-purple:#a020f0;
+    --versa-red:#e4002b;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;
+    background:#0a0014;
+    overflow:hidden;
+    font-family:'Courier New', 'Segoe UI', monospace, sans-serif;
+    touch-action:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #stage{
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at center, #1a0033 0%, #05000c 100%);
+  }
+  #gameWrap{
+    position:relative;
+    width:100%;height:100%;
+    max-width:1000px;
+    margin:0 auto;
+  }
+  canvas#game{
+    display:block;
+    width:100%;height:100%;
+    image-rendering:optimizeSpeed;
+  }
+  .overlay{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:#fff;text-align:center;
+    padding:16px;
+    pointer-events:none;
+  }
+  .overlay.interactive{pointer-events:auto;}
+  .hidden{display:none !important;}
+
+  /* ---- Title / Menu ---- */
+  .title-logo{
+    font-size:clamp(28px,7vw,54px);
+    font-weight:900;
+    letter-spacing:2px;
+    color:var(--neon-yellow);
+    text-shadow:
+      0 0 6px var(--neon-yellow),
+      0 0 18px var(--neon-pink),
+      0 0 34px var(--neon-pink),
+      3px 3px 0 #7a0058;
+    transform:perspective(200px) rotateX(8deg);
+    margin:0 0 4px 0;
+    line-height:1.05;
+  }
+  .subtitle{
+    font-size:clamp(12px,3vw,18px);
+    color:var(--neon-cyan);
+    text-shadow:0 0 8px var(--neon-cyan);
+    margin-bottom:18px;
+    letter-spacing:1px;
+  }
+  .dealer-banner{
+    background:linear-gradient(90deg, var(--versa-red), #ff5c3d);
+    color:#fff;
+    padding:8px 18px;
+    border-radius:20px;
+    font-size:clamp(11px,2.6vw,15px);
+    font-weight:bold;
+    box-shadow:0 0 18px rgba(228,0,43,.7);
+    margin-bottom:22px;
+    max-width:90%;
+  }
+  .btn{
+    font-family:inherit;
+    font-weight:bold;
+    font-size:clamp(14px,3.5vw,20px);
+    letter-spacing:1px;
+    color:#1a0033;
+    background:linear-gradient(180deg,var(--neon-yellow),#ff9d2e);
+    border:none;
+    border-radius:10px;
+    padding:14px 34px;
+    cursor:pointer;
+    box-shadow:0 0 20px rgba(255,230,46,.7), inset 0 -3px 0 rgba(0,0,0,.25);
+    margin:6px;
+    pointer-events:auto;
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  .btn:active{transform:scale(0.96);}
+  .btn.secondary{
+    background:linear-gradient(180deg,#2ee6ff,#1a8cd8);
+    box-shadow:0 0 20px rgba(46,230,255,.7), inset 0 -3px 0 rgba(0,0,0,.25);
+    animation:none;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.05);}
+  }
+  .instructions{
+    font-size:clamp(11px,2.6vw,14px);
+    color:#d8c8ff;
+    max-width:340px;
+    line-height:1.5;
+    margin-top:10px;
+  }
+  .vs-row{
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    margin:14px 0;
+    font-size:clamp(13px,3vw,17px);
+  }
+  .vs-car-tag{
+    padding:6px 14px;border-radius:8px;font-weight:bold;
+    border:2px solid currentColor;
+  }
+  .vs-text{color:var(--neon-pink);font-weight:900;text-shadow:0 0 10px var(--neon-pink);}
+
+  /* ---- HUD ---- */
+  #hud{
+    position:absolute;top:0;left:0;right:0;
+    display:flex;flex-direction:column;align-items:center;
+    padding:10px 12px 0 12px;
+    pointer-events:none;
+    z-index:5;
+  }
+  #progressBar{
+    position:relative;
+    width:min(92%, 620px);
+    height:22px;
+    background:rgba(0,0,0,.5);
+    border:2px solid var(--neon-cyan);
+    border-radius:12px;
+    box-shadow:0 0 10px rgba(46,230,255,.6);
+    overflow:visible;
+  }
+  #progressBar .track-line{
+    position:absolute;top:50%;left:6px;right:6px;height:2px;
+    background:rgba(255,255,255,.35);
+    transform:translateY(-50%);
+  }
+  .racer-marker{
+    position:absolute;top:50%;
+    width:20px;height:20px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:900;color:#000;
+    transition:left .15s linear;
+  }
+  #markerPlayer{background:var(--versa-red);box-shadow:0 0 8px var(--versa-red);color:#fff;}
+  #markerRival{background:var(--neon-cyan);box-shadow:0 0 8px var(--neon-cyan);}
+  #finishFlag{
+    position:absolute;right:-4px;top:50%;transform:translateY(-50%);
+    font-size:16px;
+  }
+  .hud-row{
+    display:flex;justify-content:space-between;width:min(92%,620px);
+    margin-top:6px;font-size:clamp(11px,2.8vw,14px);
+    color:#fff;text-shadow:0 0 6px rgba(0,0,0,.8);
+  }
+  #speedWrap{
+    position:absolute;bottom:14px;right:14px;
+    color:var(--neon-yellow);
+    text-shadow:0 0 8px var(--neon-yellow);
+    font-weight:900;font-size:clamp(14px,3.6vw,20px);
+    text-align:right;
+    pointer-events:none;
+    z-index:5;
+  }
+  #boostMeterWrap{
+    position:absolute;bottom:14px;left:14px;
+    width:90px;height:12px;
+    background:rgba(0,0,0,.5);
+    border:2px solid var(--neon-pink);
+    border-radius:8px;
+    z-index:5;
+    pointer-events:none;
+  }
+  #boostMeterFill{
+    height:100%;width:0%;
+    background:linear-gradient(90deg,var(--neon-pink),var(--neon-yellow));
+    border-radius:6px;
+  }
+  #boostLabel{
+    position:absolute;bottom:28px;left:14px;
+    font-size:10px;color:var(--neon-pink);letter-spacing:1px;
+    z-index:5;pointer-events:none;
+  }
+
+  /* ---- Countdown ---- */
+  #countdownNum{
+    font-size:clamp(60px,20vw,140px);
+    font-weight:900;
+    color:var(--neon-yellow);
+    text-shadow:0 0 20px var(--neon-pink);
+  }
+
+  /* ---- Touch controls ---- */
+  #touchControls{
+    position:absolute;bottom:0;left:0;right:0;
+    display:flex;justify-content:space-between;align-items:flex-end;
+    padding:0 10px 16px 10px;
+    z-index:6;
+    pointer-events:none;
+  }
+  .touch-btn{
+    pointer-events:auto;
+    width:74px;height:74px;
+    border-radius:50%;
+    background:rgba(46,230,255,.14);
+    border:2px solid rgba(46,230,255,.65);
+    color:var(--neon-cyan);
+    font-size:30px;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-user-select:none;user-select:none;
+  }
+  .touch-btn.active{background:rgba(46,230,255,.4);}
+  #boostBtn{
+    background:rgba(255,46,230,.14);
+    border-color:rgba(255,46,230,.65);
+    color:var(--neon-pink);
+    font-size:16px;font-weight:bold;
+    margin-bottom:96px;
+  }
+  #boostBtn.active{background:rgba(255,46,230,.45);}
+
+  /* ---- Result screen ---- */
+  #resultScreen{
+    background:rgba(5,0,12,.92);
+    overflow-y:auto;
+    justify-content:flex-start;
+    padding-top:22px;
+  }
+  .result-title{
+    font-size:clamp(22px,6vw,38px);
+    font-weight:900;
+    margin-bottom:4px;
+    text-shadow:0 0 14px currentColor;
+  }
+  .result-sub{
+    font-size:clamp(12px,3vw,16px);
+    color:#cbb8ff;margin-bottom:14px;
+  }
+  .card{
+    pointer-events:auto;
+    background:linear-gradient(160deg,#1b0230,#2b0045);
+    border:2px solid var(--neon-cyan);
+    border-radius:16px;
+    padding:18px 20px;
+    max-width:440px;width:92%;
+    box-shadow:0 0 26px rgba(46,230,255,.35);
+    margin-bottom:14px;
+  }
+  .card h3{
+    margin:0 0 2px 0;
+    color:#fff;font-size:clamp(18px,4.6vw,24px);
+  }
+  .card .tag{
+    display:inline-block;
+    font-size:11px;color:#0a0014;background:var(--neon-yellow);
+    padding:2px 8px;border-radius:6px;font-weight:bold;margin-bottom:10px;
+  }
+  .card ul{
+    text-align:left;margin:10px 0;padding-left:20px;
+    font-size:clamp(12px,3vw,14px);
+    color:#e9e0ff;line-height:1.55;
+  }
+  .card .cta{
+    font-size:clamp(12px,3vw,14px);
+    color:var(--neon-yellow);
+    font-weight:bold;
+    margin-top:8px;
+  }
+  .disclaimer{
+    font-size:10px;color:#8a7bb0;max-width:420px;margin-bottom:16px;
+  }
+  .result-actions{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
+    margin-bottom:20px;
+    pointer-events:auto;
+  }
+
+  #startOverlayScroll{
+    overflow-y:auto;
+    height:100%;width:100%;
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="gameWrap">
+    <canvas id="game"></canvas>
+
+    <!-- HUD during race -->
+    <div id="hud" class="hidden">
+      <div id="progressBar">
+        <div class="track-line"></div>
+        <div id="markerRival" class="racer-marker" style="left:0%">🚗</div>
+        <div id="markerPlayer" class="racer-marker" style="left:0%">🏎️</div>
+        <div id="finishFlag">🏁</div>
+      </div>
+      <div class="hud-row">
+        <span id="timeLabel">0.0s</span>
+        <span id="rivalNameLabel">RIVAL</span>
+      </div>
+    </div>
+    <div id="speedWrap" class="hidden"><span id="speedValue">0</span><br><small>KM/H</small></div>
+    <div id="boostLabel" class="hidden">NOS</div>
+    <div id="boostMeterWrap" class="hidden"><div id="boostMeterFill"></div></div>
+
+    <!-- Start Menu -->
+    <div id="menuScreen" class="overlay interactive">
+      <div id="startOverlayScroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div class="dealer-banner">🚗 JULIO EN NISSAN DE LOS ALTOS: PRECIOS ESPECIALES EN VERSA 🚗</div>
+        <div class="title-logo">NISSAN VERSA<br>CARRERA 80'S</div>
+        <div class="subtitle">▸ ARCADE RACER ▸</div>
+        <div class="vs-row">
+          <span class="vs-car-tag" style="color:var(--versa-red)">VERSA</span>
+          <span class="vs-text">VS</span>
+          <span class="vs-car-tag" id="menuRivalTag" style="color:var(--neon-cyan)">???</span>
+        </div>
+        <button class="btn" id="startBtn">▶ INICIAR CARRERA</button>
+        <div class="instructions">
+          Usa ← → (o desliza / botones) para esquivar obstáculos y tomar los boosts ⚡.<br>
+          Gana la carrera y descubre las características del auto ganador.
+        </div>
+      </div>
+    </div>
+
+    <!-- Countdown -->
+    <div id="countdownScreen" class="overlay hidden">
+      <div id="countdownNum">3</div>
+    </div>
+
+    <!-- Result -->
+    <div id="resultScreen" class="overlay hidden">
+      <div class="result-title" id="resultTitle">¡GANASTE!</div>
+      <div class="result-sub" id="resultSub">Terminaste la carrera en 00.0s</div>
+      <div class="card" id="resultCard">
+        <span class="tag" id="cardTag">GANADOR</span>
+        <h3 id="cardName">Nissan Versa</h3>
+        <div id="cardTagline"></div>
+        <ul id="cardFeatures"></ul>
+        <div class="cta" id="cardCta"></div>
+      </div>
+      <div class="disclaimer">*Equipamiento de referencia con fines promocionales. Consulta especificaciones exactas del año/versión con tu asesor Nissan.</div>
+      <div class="result-actions">
+        <button class="btn" id="retryBtn">🔁 JUGAR OTRA VEZ</button>
+        <button class="btn secondary" id="shareBtn">📤 COMPARTIR</button>
+      </div>
+    </div>
+
+    <!-- Touch Controls -->
+    <div id="touchControls" class="hidden">
+      <div class="touch-btn" id="btnLeft">◀</div>
+      <div class="touch-btn" id="boostBtn">NOS<br>⚡</div>
+      <div class="touch-btn" id="btnRight">▶</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   NISSAN VERSA - CARRERA 80'S
+   Juego de carreras pseudo-3D (estilo arcade de los 80's) hecho en Canvas 2D.
+   Versa vs otro modelo Nissan. Al terminar se muestran las características
+   del auto ganador junto con la promoción de Nissan de los Altos.
+   ========================================================================= */
+
+// ---------------------------------------------------------------------------
+// Datos de autos (contenido de marketing)
+// ---------------------------------------------------------------------------
+const CARS = {
+  versa: {
+    key:'versa',
+    name:'Nissan Versa',
+    tagline:'El sedán compacto ideal para moverte por la ciudad sin complicaciones.',
+    color:'#e4002b',
+    features:[
+      'Motor eficiente de 4 cilindros, pensado para el uso diario',
+      'Transmisión CVT Xtronic suave y ahorradora de combustible',
+      'Pantalla táctil con Apple CarPlay® y Android Auto®',
+      'Cámara de reversa y sensores de seguridad',
+      'Amplia cajuela e interior espacioso para toda la familia',
+      'Bajo costo de mantenimiento'
+    ],
+    cta:'🚗 Este mes el Versa tiene precio especial en Nissan de los Altos. ¡Ven a conocerlo!'
+  },
+  sentra:{
+    key:'sentra',
+    name:'Nissan Sentra',
+    tagline:'Un sedán deportivo con más equipamiento tecnológico.',
+    color:'#2ee6ff',
+    features:[
+      'Diseño deportivo con línea de techo estilo coupé',
+      'Motor eficiente con buena respuesta en carretera',
+      'Sistemas de asistencia al conductor (Safety Shield 360)',
+      'Interior premium con acabados suaves',
+      'Pantalla táctil y conectividad para smartphone'
+    ],
+    cta:'💡 Pregunta por el Sentra en Nissan de los Altos, pero este mes el Versa tiene el mejor precio.'
+  },
+  kicks:{
+    key:'kicks',
+    name:'Nissan Kicks',
+    tagline:'SUV compacta, ágil y llena de personalidad.',
+    color:'#ffe62e',
+    features:[
+      'Diseño SUV con mayor altura de manejo y visibilidad',
+      'Tecnología Intelligent Around View® Monitor disponible',
+      'Excelente rendimiento de combustible en ciudad',
+      'Interior versátil con espacio para carga',
+      'Gran variedad de colores y personalización'
+    ],
+    cta:'💡 La Kicks es genial para aventuras, pero este mes el Versa tiene el precio que buscas.'
+  },
+  march:{
+    key:'march',
+    name:'Nissan March',
+    tagline:'Compacto, práctico y fácil de manejar en la ciudad.',
+    color:'#a020f0',
+    features:[
+      'Tamaño compacto ideal para calles y estacionamientos pequeños',
+      'Bajo consumo de combustible',
+      'Fácil de maniobrar y estacionar',
+      'Mantenimiento económico',
+      'Excelente opción para un primer auto'
+    ],
+    cta:'💡 El March es muy práctico, pero este mes el Versa ofrece más equipo por tu dinero.'
+  }
+};
+const RIVAL_KEYS = ['sentra','kicks','march'];
+
+// ---------------------------------------------------------------------------
+// Canvas / responsive setup
+// ---------------------------------------------------------------------------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const gameWrap = document.getElementById('gameWrap');
+let width=800, height=500, centerX=400, horizonY=200;
+
+function resize(){
+  const rect = gameWrap.getBoundingClientRect();
+  width = Math.max(280, Math.floor(rect.width));
+  height = Math.max(320, Math.floor(rect.height));
+  canvas.width = width;
+  canvas.height = height;
+  centerX = width/2;
+  horizonY = height*0.42;
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', ()=>setTimeout(resize,200));
+resize();
+
+// ---------------------------------------------------------------------------
+// Pseudo-3D road engine constants
+// ---------------------------------------------------------------------------
+const SEG_LEN = 200;
+const RUMBLE_LEN = 3;
+const ROAD_WIDTH = 2000;
+const LANES = 3;
+const CAMERA_HEIGHT = 900;
+const FOV = 100;
+const CAMERA_DEPTH = 1/Math.tan((FOV/2)*Math.PI/180);
+const DRAW_DIST = 180; // segments visible ahead
+const FOG_START = 0.75; // fraction of DRAW_DIST where fog begins
+
+const COLORS = {
+  road:  ['#5b4a86','#4a3a70'],
+  grass: ['#1a7a4a','#166a40'],
+  rumbleLight: '#e9e9e9',
+  rumbleDark: '#c92e2e',
+  lane: '#e9e9e9'
+};
+
+let segments = [];
+let trackLength = 0;
+
+function lastY(){ return segments.length ? segments[segments.length-1].p2.world.y : 0; }
+function addSegment(curve){
+  const n = segments.length;
+  segments.push({
+    index:n,
+    p1:{world:{y:0,z:n*SEG_LEN}, camera:{}, screen:{}},
+    p2:{world:{y:0,z:(n+1)*SEG_LEN}, camera:{}, screen:{}},
+    curve:curve,
+    sprites:[],
+    colorSet: Math.floor(n/RUMBLE_LEN)%2 ? 1 : 0
+  });
+}
+function addRoad(enter,hold,leave,curve){
+  for(let i=0;i<enter;i++) addSegment( ease(0,curve,i/enter) );
+  for(let i=0;i<hold;i++) addSegment(curve);
+  for(let i=0;i<leave;i++) addSegment( ease(curve,0,i/leave) );
+}
+function ease(a,b,t){ const t2=(1-Math.cos(t*Math.PI))/2; return a + (b-a)*t2; }
+
+function buildTrack(){
+  segments = [];
+  addRoad(20,40,20,0);       // straight - salida
+  addRoad(30,60,30,2.6);     // curva suave a la derecha
+  addRoad(20,30,20,0);
+  addRoad(30,60,30,-3.2);    // curva a la izquierda
+  addRoad(20,40,20,0);
+  addRoad(20,30,20,3.4);
+  addRoad(20,30,20,-3.4);
+  addRoad(20,50,20,0);
+  addRoad(25,50,25,2.2);
+  addRoad(20,60,20,0);       // recta final
+  trackLength = segments.length * SEG_LEN;
+
+  // Coloca obstáculos y boosts
+  const laneOffsets = [-0.55,0,0.55];
+  let z = 12; // primer segmento libre (zona segura al inicio)
+  const safeStart = 18;
+  while(z < segments.length - 15){
+    if(z > safeStart){
+      const roll = Math.random();
+      if(roll < 0.5){
+        const lane = laneOffsets[Math.floor(Math.random()*3)];
+        segments[z].sprites.push({type:'obstacle', offset:lane, hit:false});
+      } else if(roll < 0.68){
+        const lane = laneOffsets[Math.floor(Math.random()*3)];
+        segments[z].sprites.push({type:'boost', offset:lane, taken:false});
+      }
+    }
+    z += 4 + Math.floor(Math.random()*4);
+  }
+  // decor: arbolitos/postes a los lados, puramente visual
+  for(let i=0;i<segments.length;i+=6){
+    if(Math.random()<0.6) segments[i].sprites.push({type:'deco', offset: (Math.random()<0.5?-1.35:1.35), side:true});
+  }
+}
+function findSegment(z){
+  let idx = Math.floor(z/SEG_LEN);
+  if(idx<0) idx=0;
+  if(idx>=segments.length) idx=segments.length-1;
+  return segments[idx];
+}
+
+// ---------------------------------------------------------------------------
+// Projection
+// ---------------------------------------------------------------------------
+function project(p, cameraX, cameraY, cameraZ){
+  p.camera.x = (p.world.x||0) - cameraX;
+  p.camera.y = (p.world.y||0) - cameraY;
+  p.camera.z = (p.world.z||0) - cameraZ;
+  const clampedZ = p.camera.z < 1 ? 1 : p.camera.z;
+  p.screen.scale = CAMERA_DEPTH / clampedZ;
+  p.screen.x = centerX + (p.screen.scale * p.camera.x * width/2);
+  p.screen.y = (height/2) - (p.screen.scale * p.camera.y * height/2) + (height*0.08);
+  p.screen.w = p.screen.scale * ROAD_WIDTH * width/2;
+  p.visible = p.camera.z > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Game state
+// ---------------------------------------------------------------------------
+const STATE = {MENU:'menu', COUNTDOWN:'countdown', PLAYING:'playing', FINISHED:'finished'};
+let state = STATE.MENU;
+
+let rivalKey = RIVAL_KEYS[0];
+
+let player, rival, keyboardInput, raceTime, countdownVal;
+
+function resetGame(){
+  buildTrack();
+  rivalKey = RIVAL_KEYS[Math.floor(Math.random()*RIVAL_KEYS.length)];
+  document.getElementById('menuRivalTag').textContent = CARS[rivalKey].name.toUpperCase();
+  document.getElementById('menuRivalTag').style.color = CARS[rivalKey].color;
+
+  player = {
+    position:0, speed:0, x:0, // x en rango aprox [-1,1]
+    maxSpeed:5200, accel:2600, brakeDecel:6500, offRoadDecel:4200, offRoadMax:1600,
+    steerSpeed:2.6, finished:false, finishTime:0, boost:0, boostMeter:1, shake:0
+  };
+  rival = {
+    position:0, speed:0, x:0, laneTarget:0, laneTimer:0,
+    baseSpeed:3600, finished:false, finishTime:0
+  };
+  raceTime = 0;
+  countdownVal = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Input
+// ---------------------------------------------------------------------------
+const input = {left:false, right:false, boost:false};
+
+window.addEventListener('keydown', e=>{
+  if(['ArrowLeft','a','A'].includes(e.key)) input.left = true;
+  if(['ArrowRight','d','D'].includes(e.key)) input.right = true;
+  if([' ','Shift'].includes(e.key)) input.boost = true;
+  if(e.key===' ') e.preventDefault();
+});
+window.addEventListener('keyup', e=>{
+  if(['ArrowLeft','a','A'].includes(e.key)) input.left = false;
+  if(['ArrowRight','d','D'].includes(e.key)) input.right = false;
+  if([' ','Shift'].includes(e.key)) input.boost = false;
+});
+
+function bindTouchBtn(el, onDown, onUp){
+  const down = (e)=>{ e.preventDefault(); el.classList.add('active'); onDown(); };
+  const up = (e)=>{ e.preventDefault(); el.classList.remove('active'); onUp(); };
+  el.addEventListener('touchstart', down, {passive:false});
+  el.addEventListener('touchend', up, {passive:false});
+  el.addEventListener('touchcancel', up, {passive:false});
+  el.addEventListener('mousedown', down);
+  el.addEventListener('mouseup', up);
+  el.addEventListener('mouseleave', up);
+}
+bindTouchBtn(document.getElementById('btnLeft'), ()=>input.left=true, ()=>input.left=false);
+bindTouchBtn(document.getElementById('btnRight'), ()=>input.right=true, ()=>input.right=false);
+bindTouchBtn(document.getElementById('boostBtn'), ()=>input.boost=true, ()=>input.boost=false);
+
+// swipe en el canvas también mueve
+let touchStartX = null;
+canvas.addEventListener('touchstart', e=>{ touchStartX = e.touches[0].clientX; }, {passive:true});
+canvas.addEventListener('touchmove', e=>{
+  if(touchStartX===null) return;
+  const dx = e.touches[0].clientX - touchStartX;
+  input.left = dx < -12;
+  input.right = dx > 12;
+}, {passive:true});
+canvas.addEventListener('touchend', ()=>{ touchStartX=null; input.left=false; input.right=false; }, {passive:true});
+
+// ---------------------------------------------------------------------------
+// Audio (WebAudio, sin archivos externos)
+// ---------------------------------------------------------------------------
+let actx = null;
+function ensureAudio(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function beep(freq, dur, type, vol){
+  if(!actx) return;
+  const osc = actx.createOscillator();
+  const gain = actx.createGain();
+  osc.type = type||'square';
+  osc.frequency.value = freq;
+  gain.gain.value = vol!==undefined?vol:0.08;
+  osc.connect(gain).connect(actx.destination);
+  const now = actx.currentTime;
+  gain.gain.setValueAtTime(gain.gain.value, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+  osc.start(now);
+  osc.stop(now+dur);
+}
+function sfxBoost(){ beep(880,0.18,'sawtooth',0.09); beep(1320,0.18,'sawtooth',0.06); }
+function sfxHit(){ beep(120,0.22,'square',0.12); }
+function sfxCountdown(){ beep(660,0.12,'square',0.08); }
+function sfxGo(){ beep(990,0.28,'square',0.1); }
+function sfxWin(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.3,'triangle',0.09), i*130)); }
+
+// ---------------------------------------------------------------------------
+// UI Elements
+// ---------------------------------------------------------------------------
+const menuScreen = document.getElementById('menuScreen');
+const countdownScreen = document.getElementById('countdownScreen');
+const countdownNum = document.getElementById('countdownNum');
+const resultScreen = document.getElementById('resultScreen');
+const hud = document.getElementById('hud');
+const speedWrap = document.getElementById('speedWrap');
+const speedValue = document.getElementById('speedValue');
+const boostMeterWrap = document.getElementById('boostMeterWrap');
+const boostMeterFill = document.getElementById('boostMeterFill');
+const boostLabel = document.getElementById('boostLabel');
+const touchControls = document.getElementById('touchControls');
+const timeLabel = document.getElementById('timeLabel');
+const rivalNameLabel = document.getElementById('rivalNameLabel');
+const markerPlayer = document.getElementById('markerPlayer');
+const markerRival = document.getElementById('markerRival');
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  ensureAudio();
+  startCountdown();
+});
+document.getElementById('retryBtn').addEventListener('click', ()=>{
+  resultScreen.classList.add('hidden');
+  resetGame();
+  menuScreen.classList.remove('hidden');
+});
+document.getElementById('shareBtn').addEventListener('click', shareResult);
+
+function shareResult(){
+  const winnerCar = lastWinnerCar;
+  const text = `¡Jugué la carrera 80's de Nissan de los Altos! Gané con el ${winnerCar.name} 🏁 Ven este mes por precio especial en el Versa.`;
+  if(navigator.share){
+    navigator.share({title:'Nissan Versa - Carrera 80\'s', text:text}).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{
+      alert('¡Copiado! Comparte tu resultado con tus amigos.');
+    }).catch(()=>{ alert(text); });
+  } else {
+    alert(text);
+  }
+}
+
+function startCountdown(){
+  menuScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  countdownScreen.classList.remove('hidden');
+  hud.classList.remove('hidden');
+  speedWrap.classList.remove('hidden');
+  boostMeterWrap.classList.remove('hidden');
+  boostLabel.classList.remove('hidden');
+  touchControls.classList.remove('hidden');
+  rivalNameLabel.textContent = CARS[rivalKey].name.toUpperCase();
+  state = STATE.COUNTDOWN;
+  countdownVal = 3;
+  countdownNum.textContent = countdownVal;
+  sfxCountdown();
+  const iv = setInterval(()=>{
+    countdownVal--;
+    if(countdownVal<=0){
+      clearInterval(iv);
+      countdownScreen.classList.add('hidden');
+      sfxGo();
+      state = STATE.PLAYING;
+    } else {
+      countdownNum.textContent = countdownVal;
+      sfxCountdown();
+    }
+  },800);
+}
+
+let lastWinnerCar = CARS.versa;
+let lastWinnerIsPlayer = true;
+
+function finishRace(playerWon){
+  state = STATE.FINISHED;
+  hud.classList.add('hidden');
+  speedWrap.classList.add('hidden');
+  boostMeterWrap.classList.add('hidden');
+  boostLabel.classList.add('hidden');
+  touchControls.classList.add('hidden');
+
+  lastWinnerIsPlayer = playerWon;
+  lastWinnerCar = playerWon ? CARS.versa : CARS[rivalKey];
+
+  const resultTitle = document.getElementById('resultTitle');
+  const resultSub = document.getElementById('resultSub');
+  const cardTag = document.getElementById('cardTag');
+  const cardName = document.getElementById('cardName');
+  const cardTagline = document.getElementById('cardTagline');
+  const cardFeatures = document.getElementById('cardFeatures');
+  const cardCta = document.getElementById('cardCta');
+  const resultCard = document.getElementById('resultCard');
+
+  if(playerWon){
+    resultTitle.textContent = '🏆 ¡GANASTE LA CARRERA!';
+    resultTitle.style.color = 'var(--neon-yellow)';
+    resultSub.textContent = `Tu ${CARS.versa.name} cruzó la meta en ${player.finishTime.toFixed(1)}s`;
+    sfxWin();
+  } else {
+    resultTitle.textContent = `${CARS[rivalKey].name} ganó esta carrera`;
+    resultTitle.style.color = 'var(--neon-cyan)';
+    resultSub.textContent = `Pero conoce por qué el Versa es la mejor opción este mes 👇`;
+  }
+
+  const car = lastWinnerCar;
+  cardTag.textContent = playerWon ? 'GANADOR - TU AUTO' : 'GANADOR DE LA CARRERA';
+  cardName.textContent = car.name;
+  cardName.style.color = car.color;
+  resultCard.style.borderColor = car.color;
+  cardTagline.textContent = car.tagline;
+  cardFeatures.innerHTML = '';
+  car.features.forEach(f=>{
+    const li = document.createElement('li');
+    li.textContent = f;
+    cardFeatures.appendChild(li);
+  });
+  cardCta.textContent = car.cta;
+
+  resultScreen.classList.remove('hidden');
+}
+
+// ---------------------------------------------------------------------------
+// Update
+// ---------------------------------------------------------------------------
+function updatePlayer(dt){
+  const p = player;
+  const seg = findSegment(p.position);
+  const speedPercent = p.speed / p.maxSpeed;
+  const steerPercent = Math.max(0.4, speedPercent); // siempre se puede maniobrar de vuelta al camino
+
+  // dirección
+  let dir = 0;
+  if(input.left) dir -= 1;
+  if(input.right) dir += 1;
+  p.x += dir * p.steerSpeed * steerPercent * dt;
+
+  // el peralte de la curva empuja el auto
+  p.x -= (seg.curve * 0.0009) * speedPercent;
+
+  const offRoad = Math.abs(p.x) > 1;
+  const maxAllowed = offRoad ? p.offRoadMax : p.maxSpeed;
+
+  // boost
+  if(input.boost && p.boostMeter > 0.02 && !offRoad){
+    p.boost = Math.min(1, p.boost + dt*3);
+    p.boostMeter = Math.max(0, p.boostMeter - dt*0.55);
+  } else {
+    p.boost = Math.max(0, p.boost - dt*2);
+  }
+  const effectiveMax = maxAllowed * (1 + p.boost*0.55);
+
+  if(p.speed < effectiveMax){
+    p.speed = Math.min(effectiveMax, p.speed + (offRoad? p.accel*0.4 : p.accel) * dt);
+  } else {
+    p.speed = Math.max(effectiveMax, p.speed - p.offRoadDecel*dt);
+  }
+  if(offRoad){
+    p.speed = Math.max(p.offRoadMax*0.3, p.speed - p.offRoadDecel*dt*0.5);
+  }
+
+  if(p.shake > 0) p.shake = Math.max(0, p.shake - dt*3);
+
+  p.position += p.speed*dt;
+  if(p.x < -1.4) p.x = -1.4;
+  if(p.x > 1.4) p.x = 1.4;
+
+  // colisiones / boosts: revisamos sprites del segmento actual y el siguiente
+  checkSprites(p, seg);
+
+  if(!p.finished && p.position >= trackLength){
+    p.finished = true;
+    p.finishTime = raceTime;
+    p.position = trackLength;
+  }
+}
+
+function checkSprites(p, seg){
+  for(let i=0;i<seg.sprites.length;i++){
+    const s = seg.sprites[i];
+    if(s.side) continue;
+    const dx = Math.abs(p.x - s.offset);
+    if(s.type==='obstacle' && !s.hit && dx < 0.28){
+      s.hit = true;
+      p.speed = Math.max(p.offRoadMax*0.5, p.speed*0.45);
+      p.shake = 1;
+      sfxHit();
+      if(navigator.vibrate) navigator.vibrate(80);
+    } else if(s.type==='boost' && !s.taken && dx < 0.3){
+      s.taken = true;
+      p.boostMeter = Math.min(1, p.boostMeter + 0.5);
+      p.boost = Math.min(1, p.boost + 0.6);
+      sfxBoost();
+    }
+  }
+}
+
+function updateRival(dt){
+  const r = rival;
+  if(r.finished) return;
+  // rubber-band: si el jugador va adelante, el rival acelera un poco; si va atrás, se relaja
+  const diff = (player.position - r.position) / trackLength; // -1..1 aprox
+  const rubberBand = diff * 1800;
+  r.laneTimer -= dt;
+  if(r.laneTimer <= 0){
+    r.laneTarget = (Math.random()*2-1) * 0.6;
+    r.laneTimer = 1 + Math.random()*1.5;
+  }
+  r.x += (r.laneTarget - r.x) * dt * 1.5;
+
+  const noise = Math.sin(raceTime*1.7 + 2) * 260 + Math.sin(raceTime*0.6)*180;
+  const target = r.baseSpeed + rubberBand + noise;
+  r.speed += (target - r.speed) * Math.min(1, dt*1.6);
+  r.speed = Math.max(1200, Math.min(5400, r.speed));
+
+  r.position += r.speed*dt;
+  if(!r.finished && r.position >= trackLength){
+    r.finished = true;
+    r.finishTime = raceTime;
+    r.position = trackLength;
+  }
+}
+
+function update(dt){
+  if(state !== STATE.PLAYING) return;
+  raceTime += dt;
+  updatePlayer(dt);
+  updateRival(dt);
+  timeLabel.textContent = raceTime.toFixed(1)+'s';
+
+  const pPct = Math.min(100, (player.position/trackLength)*100);
+  const rPct = Math.min(100, (rival.position/trackLength)*100);
+  markerPlayer.style.left = pPct+'%';
+  markerRival.style.left = rPct+'%';
+  speedValue.textContent = Math.round((player.speed/player.maxSpeed)*220);
+  boostMeterFill.style.width = (player.boostMeter*100)+'%';
+
+  if(player.finished || rival.finished){
+    const playerWon = player.finished && (!rival.finished || player.finishTime <= rival.finishTime);
+    // si ninguno terminó pero ambos posiciones llegaron (edge), decide por posición
+    finishRace(playerWon);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+function drawBackground(){
+  const sunsetGrad = ctx.createLinearGradient(0,0,0,horizonY);
+  sunsetGrad.addColorStop(0,'#1a0033');
+  sunsetGrad.addColorStop(0.45,'#3a0a5c');
+  sunsetGrad.addColorStop(0.75,'#a3216b');
+  sunsetGrad.addColorStop(1,'#ff7a3d');
+  ctx.fillStyle = sunsetGrad;
+  ctx.fillRect(0,0,width,horizonY);
+
+  // sol
+  const sunR = height*0.22;
+  const sunX = centerX + Math.sin(raceTime*0.05)*width*0.05;
+  const sunY = horizonY*0.62;
+  const sunGrad = ctx.createLinearGradient(0,sunY-sunR,0,sunY+sunR);
+  sunGrad.addColorStop(0,'#ffe62e');
+  sunGrad.addColorStop(1,'#ff2ee6');
+  ctx.fillStyle = sunGrad;
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
+  ctx.fill();
+  // franjas del sol
+  ctx.fillStyle = 'rgba(26,0,51,1)';
+  for(let i=0;i<5;i++){
+    const yy = sunY - sunR*0.5 + i*sunR*0.22;
+    ctx.fillRect(sunX-sunR, yy, sunR*2, sunR*0.07);
+  }
+
+  // montañas
+  ctx.fillStyle = '#2b0845';
+  ctx.beginPath();
+  ctx.moveTo(0,horizonY);
+  for(let x=0;x<=width;x+=width/8){
+    ctx.lineTo(x, horizonY - Math.abs(Math.sin((x+raceTime*8)/120))*height*0.08 - height*0.03);
+  }
+  ctx.lineTo(width,horizonY);
+  ctx.closePath();
+  ctx.fill();
+
+  // suelo/pasto detras del horizonte
+  ctx.fillStyle = '#0d0018';
+  ctx.fillRect(0,horizonY,width,height-horizonY);
+}
+
+function polygon(x1,y1,w1,x2,y2,w2,color){
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x1-w1,y1);
+  ctx.lineTo(x2-w2,y2);
+  ctx.lineTo(x2+w2,y2);
+  ctx.lineTo(x1+w1,y1);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawSprite(worldSprite, scale, screenX, screenY){
+  const w = scale * width/2;
+  if(worldSprite.side){
+    // decoracion: poste/arbol simple
+    const h = w*1.4;
+    ctx.fillStyle = '#0a4a2a';
+    ctx.beginPath();
+    ctx.moveTo(screenX, screenY-h);
+    ctx.lineTo(screenX-w*0.5, screenY);
+    ctx.lineTo(screenX+w*0.5, screenY);
+    ctx.closePath();
+    ctx.fill();
+    return;
+  }
+  if(worldSprite.type==='obstacle'){
+    if(worldSprite.hit) return;
+    const size = w*0.55;
+    ctx.fillStyle = '#ff7a00';
+    ctx.beginPath();
+    ctx.moveTo(screenX, screenY-size*1.3);
+    ctx.lineTo(screenX-size*0.55, screenY);
+    ctx.lineTo(screenX+size*0.55, screenY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(screenX-size*0.35, screenY-size*0.55, size*0.7, size*0.14);
+  } else if(worldSprite.type==='boost'){
+    if(worldSprite.taken) return;
+    const size = w*0.5;
+    ctx.save();
+    ctx.translate(screenX, screenY-size*0.6);
+    ctx.rotate(Math.PI/4);
+    const grad = ctx.createLinearGradient(-size/2,-size/2,size/2,size/2);
+    grad.addColorStop(0,'#2ee6ff');
+    grad.addColorStop(1,'#ff2ee6');
+    ctx.fillStyle = grad;
+    ctx.fillRect(-size/2,-size/2,size,size);
+    ctx.restore();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold '+(size*0.55)+'px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('N', screenX, screenY-size*0.4);
+  }
+}
+
+function drawCarSilhouette(screenX, screenY, w, color, wobble){
+  const carW = w*1.0;
+  const carH = carW*0.55;
+  ctx.save();
+  ctx.translate(screenX + (wobble||0), screenY);
+  // sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(0, carH*0.42, carW*0.55, carH*0.18, 0,0,Math.PI*2);
+  ctx.fill();
+  // carroceria
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-carW*0.5, carH*0.35);
+  ctx.lineTo(-carW*0.5, -carH*0.05);
+  ctx.quadraticCurveTo(-carW*0.42,-carH*0.55,-carW*0.15,-carH*0.6);
+  ctx.lineTo(carW*0.15,-carH*0.6);
+  ctx.quadraticCurveTo(carW*0.42,-carH*0.55,carW*0.5,-carH*0.05);
+  ctx.lineTo(carW*0.5, carH*0.35);
+  ctx.closePath();
+  ctx.fill();
+  // parabrisas
+  ctx.fillStyle = 'rgba(30,30,50,0.85)';
+  ctx.beginPath();
+  ctx.moveTo(-carW*0.25,-carH*0.1);
+  ctx.lineTo(-carW*0.18,-carH*0.5);
+  ctx.lineTo(carW*0.18,-carH*0.5);
+  ctx.lineTo(carW*0.25,-carH*0.1);
+  ctx.closePath();
+  ctx.fill();
+  // luces
+  ctx.fillStyle = '#ffe62e';
+  ctx.fillRect(-carW*0.48, carH*0.05, carW*0.14, carH*0.12);
+  ctx.fillRect(carW*0.34, carH*0.05, carW*0.14, carH*0.12);
+  // llantas
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-carW*0.55, carH*0.28, carW*0.18, carH*0.16);
+  ctx.fillRect(carW*0.37, carH*0.28, carW*0.18, carH*0.16);
+  ctx.restore();
+}
+
+function render(){
+  ctx.clearRect(0,0,width,height);
+  drawBackground();
+
+  if(state===STATE.MENU){
+    return;
+  }
+
+  const shakeX = player.shake ? (Math.random()-0.5)*player.shake*14 : 0;
+  ctx.save();
+  ctx.translate(shakeX,0);
+
+  const baseSegment = findSegment(player.position);
+  const basePercent = (player.position % SEG_LEN)/SEG_LEN;
+  let x = 0, dx = -(baseSegment.curve * basePercent);
+
+  const camX = player.x * ROAD_WIDTH;
+
+  // proyectamos todos los segmentos visibles primero (de atrás hacia adelante para pintar bien)
+  const visible = [];
+  for(let n=0;n<DRAW_DIST;n++){
+    const idx = baseSegment.index + n;
+    if(idx>=segments.length) break;
+    const segment = segments[idx];
+    project(segment.p1, camX - x, CAMERA_HEIGHT, player.position);
+    project(segment.p2, camX - x - dx, CAMERA_HEIGHT, player.position);
+    x += dx;
+    dx += segment.curve;
+    visible.push(segment);
+  }
+
+  for(let n=visible.length-1; n>=0; n--){
+    const segment = visible[n];
+    const p1 = segment.p1.screen, p2 = segment.p2.screen;
+    // sin colinas: basta con no dibujar lo que ya quedó atrás de la cámara
+    // o segmentos degenerados donde el punto lejano no queda por encima del cercano
+    if(segment.p1.camera.z <= 0 || p2.y >= p1.y) continue;
+    const fogT = n/DRAW_DIST;
+    let alpha = 1;
+    if(fogT > FOG_START) alpha = Math.max(0, 1 - (fogT-FOG_START)/(1-FOG_START));
+    if(alpha <= 0.01) continue;
+
+    const grass = COLORS.grass[segment.colorSet];
+    const road = COLORS.road[segment.colorSet];
+
+    // limitamos las coordenadas Y para evitar polígonos absurdamente grandes
+    // cuando un segmento queda casi debajo de la cámara
+    const y1 = Math.min(p1.y, height*1.5);
+    const y2 = Math.min(p2.y, height*1.5);
+
+    ctx.globalAlpha = alpha;
+    // pasto
+    ctx.fillStyle = grass;
+    ctx.fillRect(0, y2, width, y1-y2);
+    // carretera
+    polygon(p1.x,y1,p1.w, p2.x,y2,p2.w, road);
+    // rumble strips
+    const rumbleColor = segment.colorSet ? COLORS.rumbleDark : COLORS.rumbleLight;
+    polygon(p1.x,y1,p1.w*1.08, p2.x,y2,p2.w*1.08, rumbleColor);
+    polygon(p1.x,y1,p1.w*0.96, p2.x,y2,p2.w*0.96, road);
+    // linea central discontinua
+    if(segment.index % 2 === 0){
+      polygon(p1.x,y1,p1.w*0.02, p2.x,y2,p2.w*0.02, COLORS.lane);
+    }
+    ctx.globalAlpha = 1;
+
+    // sprites en este segmento
+    for(let i=0;i<segment.sprites.length;i++){
+      const s = segment.sprites[i];
+      const scale = segment.p1.screen.scale;
+      const sx = segment.p1.screen.x + scale*s.offset*(ROAD_WIDTH/2)*(width/2);
+      const sy = segment.p1.screen.y;
+      if(sy < horizonY-2 || sy > height+40) continue;
+      drawSprite(s, scale, sx, sy);
+    }
+
+    // auto rival: se dibuja cuando su posición cae dentro de este segmento
+    if(rival.position >= segment.p1.world.z && rival.position < segment.p2.world.z){
+      const scale = segment.p1.screen.scale;
+      const rx = segment.p1.screen.x + scale*rival.x*(ROAD_WIDTH/2)*(width/2);
+      const ry = segment.p1.screen.y;
+      if(ry > horizonY-2 && ry < height+60){
+        const carW = Math.max(4, scale*width*0.5);
+        drawCarSilhouette(rx, ry - carW*0.1, carW, CARS[rivalKey].color, Math.sin(raceTime*6)*2);
+      }
+    }
+  }
+
+  ctx.restore();
+
+  // auto del jugador (fijo en pantalla, parte baja)
+  const pcarW = width*0.30;
+  const bob = Math.sin(raceTime*14)* (player.speed>50?1.5:0);
+  drawCarSilhouette(centerX + player.x*width*0.16, height*0.92 + bob, pcarW, CARS.versa.color, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Main loop
+// ---------------------------------------------------------------------------
+let lastT = null;
+function loop(t){
+  if(lastT===null) lastT = t;
+  let dt = (t-lastT)/1000;
+  lastT = t;
+  if(dt>0.05) dt=0.05; // evita saltos grandes si la pestaña estuvo en pausa
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+resetGame();
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
